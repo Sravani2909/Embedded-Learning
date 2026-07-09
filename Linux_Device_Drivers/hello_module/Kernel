@@ -1,0 +1,10 @@
+| File             | Purpose                                         |
+| ---------------- | ----------------------------------------------- |
+| `hello.c`        | Your source code                                |
+| `hello.o`        | Compiled object file                            |
+| `hello.mod.c`    | Auto-generated module metadata                  |
+| `hello.mod.o`    | Compiled metadata object                        |
+| `hello.ko`       | Final kernel module                             |
+| `Module.symvers` | Exported kernel symbols and version information |
+| `modules.order`  | Order of built modules                          |
+
