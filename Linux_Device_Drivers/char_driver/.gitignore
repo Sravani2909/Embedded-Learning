@@ -1,0 +1,26 @@
+# Kernel build files
+*.o
+*.ko
+*.mod
+*.mod.c
+*.mod.o
+*.order
+*.symvers
+Module.symvers
+modules.order
+Module.markers
+
+# Build metadata
+*.cmd
+.tmp_versions/
+
+# Vim swap files
+*.swp
+*.swo
+*.swn
+
+# Backup files
+*~
+
+# User application binary
+test
