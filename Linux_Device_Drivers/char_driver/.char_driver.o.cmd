@@ -1071,7 +1071,6 @@ deps_char_driver.o := \
     $(wildcard include/config/UNWINDER_ORC) \
   /usr/src/linux-headers-6.17.0-14-generic/include/asm-generic/module.h \
     $(wildcard include/config/HAVE_MOD_ARCH_SPECIFIC) \
-  /usr/src/linux-headers-6.17.0-14-generic/include/linux/cdev.h \
   /usr/src/linux-headers-6.17.0-14-generic/include/linux/device.h \
     $(wildcard include/config/GENERIC_MSI_IRQ) \
     $(wildcard include/config/ENERGY_MODEL) \
@@ -1116,6 +1115,7 @@ deps_char_driver.o := \
   /usr/src/linux-headers-6.17.0-14-generic/include/linux/device/driver.h \
   /usr/src/linux-headers-6.17.0-14-generic/arch/x86/include/asm/device.h \
   /usr/src/linux-headers-6.17.0-14-generic/include/linux/pm_wakeup.h \
+  /usr/src/linux-headers-6.17.0-14-generic/include/linux/cdev.h \
 
 char_driver.o: $(deps_char_driver.o)
 
