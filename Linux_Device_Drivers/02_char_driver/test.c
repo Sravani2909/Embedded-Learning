@@ -11,6 +11,11 @@ int main(){
 
 	}
 	printf("Device opened successfully");
+	char buf[30];
+
+	read(fd, buf, 20);
+
+	printf("%s\n", buf);
 	//printf("Device Closed successfully");
 	close(fd);
 	 printf("Device Closed successfully");

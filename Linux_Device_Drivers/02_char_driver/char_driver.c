@@ -5,17 +5,46 @@
 #include<linux/fs.h>
 #include <linux/cdev.h>
 
+#define DEV_MEM_SIZE 512
+
+static char device_buffer[DEV_MEM_SIZE]="Welcome Sravani;
+
 static dev_t devicenum;
 static struct cdev my_cdev;
 static struct class *char_class;
 static struct device *char_device;
+static  ssize_t my_read(struct file *filp, char __user *buff, size_t count, loff_t *f_pos)
+{
+	pr_info("Read requested for %zu bytes \n",count);
+	pr_info("Current file position = %lld\n",*f_pos);
+
+	
+	/* Adjust the 'count' */
+	if((*f_pos + count) > DEV_MEM_SIZE)
+		count = DEV_MEM_SIZE - *f_pos;
+
+	/*copy to user */
+	if(copy_to_user(buff,&device_buffer[*f_pos],count)){
+		return -EFAULT;
+	}
+
+	/*update the current file postion */
+	*f_pos += count;
+
+	pr_info("Number of bytes successfully read = %zu\n",count);
+	pr_info("Updated file position = %lld\n",*f_pos);
+
+	/*Return number of bytes which have been successfully read */
+	return count;
+}
+
 static int my_open(struct inode *inode,struct file *file)
 {
-	printk(KERN_INFO"Device opened\n");
+	printk(KERN_INFO"Driver opened\n");
 	return 0;
 }
 static int my_release(struct inode *inode,struct file *file){
-	printk(KERN_INFO "Device Closed\n");
+	printk(KERN_INFO "Driver Closed\n");
 	return 0;
 }
 static struct file_operations fops={
@@ -39,7 +68,7 @@ printk(KERN_INFO "Step 1: alloc_chrdev_region OK\n");
 cdev_init(&my_cdev,&fops);
 printk(KERN_INFO "Step 2: cdev_init OK\n");
 
-	ret = cdev_add(&my_cdev, devicenum, 1);
+ret = cdev_add(&my_cdev, devicenum, 1);
         if (ret < 0) {
     	unregister_chrdev_region(devicenum, 1);
     	return ret;
@@ -66,7 +95,7 @@ char_device=device_create(char_class,NULL,devicenum,NULL,"char_driver");
     	return PTR_ERR(char_device);
 }
 printk(KERN_INFO "Step 5: device_create OK\n");
- printk(KERN_INFO "Driver opened\n");
+ printk(KERN_INFO "module intilaisation completed\n");
 
 
 	return 0;
@@ -82,7 +111,7 @@ static void __exit chardriver_exit(void)
 
     unregister_chrdev_region(devicenum, 1);
 
-    printk(KERN_INFO "Driver Removed\n");
+    printk(KERN_INFO "module exit  successfully\n");
 }
 module_init(chardriver_init);
 module_exit(chardriver_exit);
