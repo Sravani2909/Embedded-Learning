@@ -1695,4 +1695,787 @@ When
 - Why ioctl() is needed
 - _IO, _IOR, _IOW, _IOWR macros
 - User Space ↔ Driver communication using ioctl()
----------------------------------------------------
+---------------------------------------------------# Chapter 18: ioctl() Macros (_IO, _IOR, _IOW, _IOWR)
+
+## 1. What is ioctl()?
+
+`ioctl()` (Input/Output Control) is a system call used to perform device-specific operations that cannot be done using `read()` or `write()`.
+
+Prototype:
+
+```c
+int ioctl(int fd, unsigned long cmd, ...);
+fd : File descriptor returned by open()
+cmd : Encoded ioctl command
+arg : Optional argument
+2. Why do we need ioctl macros?
+
+Suppose we define commands like:
+
+#define LED_ON     1
+#define LED_OFF    2
+
+Another driver may also define:
+
+#define MOTOR_ON   1
+#define MOTOR_OFF  2
+
+Now command numbers conflict.
+
+Linux solves this by encoding additional information into every ioctl command.
+
+3. ioctl Macros
+
+Linux provides four standard macros.
+
+_IO()
+
+Used when no data is transferred.
+
+Syntax:
+
+_IO(type, nr)
+
+Example:
+
+#define LED_ON _IO('P',1)
+
+Meaning:
+
+Type (Magic Number) = 'P'
+Command Number = 1
+Direction = None
+Size = 0
+
+Application:
+
+ioctl(fd, LED_ON);
+_IOR()
+
+Used when the driver sends data to user space.
+
+Syntax:
+
+_IOR(type, nr, datatype)
+
+Example:
+
+#define GET_LED_STATUS _IOR('P',2,int)
+
+Application:
+
+int status;
+
+ioctl(fd, GET_LED_STATUS, &status);
+
+Driver:
+
+copy_to_user((int __user *)arg,
+             &led_status,
+             sizeof(int));
+
+Direction:
+
+Kernel
+   │
+   ▼
+User
+_IOW()
+
+Used when user space sends data to the driver.
+
+Syntax:
+
+_IOW(type, nr, datatype)
+
+Example:
+
+#define SET_BRIGHTNESS _IOW('P',3,int)
+
+Application:
+
+int brightness = 80;
+
+ioctl(fd, SET_BRIGHTNESS, &brightness);
+
+Driver:
+
+copy_from_user(&kernel_brightness,
+               (int __user *)arg,
+               sizeof(int));
+
+Direction:
+
+User
+  │
+  ▼
+Kernel
+_IOWR()
+
+Used when both user and kernel exchange data.
+
+Syntax:
+
+_IOWR(type, nr, datatype)
+
+Example:
+
+#define UPDATE_STATUS _IOWR('P',4,int)
+
+Application:
+
+int value = 10;
+
+ioctl(fd, UPDATE_STATUS, &value);
+
+Driver:
+
+copy_from_user(...);
+
+process_data();
+
+copy_to_user(...);
+
+Direction:
+
+User
+   │
+   ▼
+Kernel
+
+Kernel
+   │
+   ▼
+User
+4. Meaning of Each Parameter
+
+Example:
+
+_IO('P',1)
+Type
+
+Also called the Magic Number.
+
+'P'
+
+Used to identify the driver.
+
+Examples:
+
+'P' -> Pseudo Driver
+'U' -> UART Driver
+'S' -> SPI Driver
+Number (nr)
+
+Identifies a particular command.
+
+Example:
+
+1 -> LED_ON
+2 -> LED_OFF
+3 -> GET_STATUS
+5. Why same magic number?
+
+All commands belonging to one driver should use the same magic number.
+
+Example:
+
+#define LED_ON          _IO('P',1)
+#define LED_OFF         _IO('P',2)
+#define GET_STATUS      _IOR('P',3,int)
+#define SET_BRIGHTNESS  _IOW('P',4,int)
+
+Only the command number changes.
+
+6. Why different magic numbers?
+
+Different drivers use different magic numbers.
+
+Example:
+
+#define LED_ON      _IO('P',1)
+
+#define UART_RESET  _IO('U',1)
+
+Although both commands use command number 1, they never conflict because their magic numbers are different.
+
+7. Internal Expansion
+
+Linux defines:
+
+#define _IO(type,nr) \
+        _IOC(_IOC_NONE,(type),(nr),0)
+
+Example:
+
+_IO('P',1)
+
+Expands to:
+
+_IOC(_IOC_NONE,'P',1,0)
+8. _IOR Expansion
+_IOR('P',2,int)
+
+Expands to
+
+_IOC(_IOC_READ,'P',2,sizeof(int))
+9. _IOW Expansion
+_IOW('P',3,int)
+
+Expands to
+
+_IOC(_IOC_WRITE,'P',3,sizeof(int))
+10. _IOWR Expansion
+_IOWR('P',4,int)
+
+Expands to
+
+_IOC(_IOC_READ | _IOC_WRITE,
+     'P',
+     4,
+     sizeof(int))
+11. Direction Meaning
+_IO
+
+No Data Transfer
+
+Application
+      │
+      ▼
+Driver performs action
+_IOR
+
+Kernel
+   │
+   ▼
+User
+_IOW
+
+User
+   │
+   ▼
+Kernel
+_IOWR
+
+User
+   │
+   ▼
+Kernel
+   │
+   ▼
+User
+12. Summary Table
+Macro	Data Flow	Driver API
+_IO	No data	Perform operation
+_IOR	Kernel → User	copy_to_user()
+_IOW	User → Kernel	copy_from_user()
+_IOWR	Both directions	copy_from_user() + copy_to_user()
+Interview Questions
+Q1. Why do we use _IO() instead of simply writing #define LED_ON 1?
+
+Answer:
+To generate a unique ioctl command number by encoding the magic number, command number, direction, and size, avoiding conflicts between different drivers.
+
+Q2. What is the purpose of the magic number?
+
+Answer:
+The magic number identifies the driver. All ioctl commands for a particular driver should use the same magic number.
+
+Q3. What is the difference between _IOR() and _IOW()?
+
+Answer:
+
+_IOR() → Driver sends data to user space using copy_to_user().
+_IOW() → User space sends data to the driver using copy_from_user().
+Q4. When do we use _IOWR()?
+
+Answer:
+When both user space and the driver exchange data in the same ioctl() call.
+
+Key Points to Remember
+type = Magic Number (Driver Identifier)
+nr = Command Number
+_IO = No data transfer
+_IOR = Kernel → User
+_IOW = User → Kernel
+_IOWR = Both directions
+Linux internally expands these macros using _IOC().
+This Chapter 18 continues naturally from your previous notes. In **Chapter 19**, we'll go one level deeper into the Linux kernel and study the actual implementation of `_IOC()`, including `_IOC_DIRSHIFT`, `_IOC_TYPESHIFT`, `_IOC_NRSHIFT`, and `_IOC_SIZESHIFT`, to understand exactly how the 32-bit `ioctl` command number is constructed.
+-------------------------------------------------------------------
+# Chapter 19: Understanding _IOC() Internals
+
+## 1. Introduction
+
+In the previous chapter, we learned that:
+
+```c
+#define LED_ON _IO('P',1)
+```
+
+Internally, Linux expands it as:
+
+```c
+_IO('P',1)
+
+↓
+
+_IOC(_IOC_NONE,'P',1,0)
+```
+
+`_IOC()` is the core Linux macro responsible for generating a unique 32-bit ioctl command number.
+
+It combines four fields:
+
+- Direction
+- Magic Number (Type)
+- Command Number (Number)
+- Data Size
+
+---
+
+## 2. Linux Definition of _IOC()
+
+Simplified Linux definition:
+
+```c
+#define _IOC(dir,type,nr,size) \
+        ((dir << _IOC_DIRSHIFT) | \
+         (type << _IOC_TYPESHIFT) | \
+         (nr << _IOC_NRSHIFT) | \
+         (size << _IOC_SIZESHIFT))
+```
+
+Every field is shifted to a different bit position and then combined using the bitwise OR (`|`) operator.
+
+---
+
+## 3. Parameters of _IOC()
+
+```c
+_IOC(dir,type,nr,size)
+```
+
+| Parameter | Meaning |
+|-----------|---------|
+| dir | Data transfer direction |
+| type | Magic Number (Driver Identifier) |
+| nr | Command Number |
+| size | Size of the data transferred |
+
+---
+
+## 4. Why is _IOC() Needed?
+
+Suppose Linux simply added all values.
+
+Example 1:
+
+```text
+Direction = 0
+Magic = 80
+Number = 1
+Size = 0
+
+Total = 81
+```
+
+Example 2:
+
+```text
+Direction = 1
+Magic = 79
+Number = 1
+Size = 0
+
+Total = 81
+```
+
+Different commands produce the same result.
+
+This is called a **collision**.
+
+To avoid collisions, Linux stores every field in a separate bit position.
+
+---
+
+## 5. ioctl Command Layout
+
+An ioctl command is a 32-bit integer.
+
+```text
+ -------------------------------------------------------------
+| Direction | Data Size | Magic(Type) | Command Number (nr) |
+ -------------------------------------------------------------
+```
+
+Typical bit layout:
+
+```text
+31........30 29............16 15........8 7........0
+
+ Direction      Size          Type         Number
+```
+
+---
+
+## 6. Direction Field
+
+Example:
+
+```c
+_IO('P',1)
+```
+
+Expands to
+
+```c
+_IOC(_IOC_NONE,'P',1,0)
+```
+
+Direction is
+
+```text
+_IOC_NONE
+```
+
+Meaning
+
+```text
+No data transfer
+```
+
+Other possible directions:
+
+| Macro | Meaning |
+|--------|---------|
+| _IOC_NONE | No data transfer |
+| _IOC_READ | Kernel → User |
+| _IOC_WRITE | User → Kernel |
+| _IOC_READ \| _IOC_WRITE | Both directions |
+
+---
+
+## 7. Magic Number (Type)
+
+Example
+
+```c
+_IO('P',1)
+```
+
+Magic Number
+
+```text
+'P'
+```
+
+ASCII value
+
+```text
+80
+```
+
+Purpose:
+
+Identifies the driver.
+
+Examples
+
+```text
+'P' → Pseudo Driver
+
+'U' → UART Driver
+
+'S' → SPI Driver
+
+'I' → I2C Driver
+```
+
+All ioctl commands belonging to one driver should use the same magic number.
+
+---
+
+## 8. Command Number (nr)
+
+Example
+
+```c
+_IO('P',1)
+```
+
+Command Number
+
+```text
+1
+```
+
+Examples
+
+```text
+1 → LED_ON
+
+2 → LED_OFF
+
+3 → LED_TOGGLE
+
+4 → GET_STATUS
+```
+
+The command number identifies a specific operation within the driver.
+
+---
+
+## 9. Data Size
+
+Example
+
+```c
+_IOR('P',4,int)
+```
+
+Size field
+
+```text
+sizeof(int)
+
+=
+
+4 bytes
+```
+
+Linux stores the size of the transferred data in the ioctl command.
+
+---
+
+## 10. How Bit Shifting Works
+
+```c
+dir << _IOC_DIRSHIFT
+
+type << _IOC_TYPESHIFT
+
+nr << _IOC_NRSHIFT
+
+size << _IOC_SIZESHIFT
+```
+
+Each value is shifted to its own position.
+
+Then Linux combines them:
+
+```c
+encoded_command =
+(dir << _IOC_DIRSHIFT) |
+(type << _IOC_TYPESHIFT) |
+(nr << _IOC_NRSHIFT) |
+(size << _IOC_SIZESHIFT);
+```
+
+---
+
+## 11. Complete Example
+
+Application
+
+```c
+#define LED_ON _IO('P',1)
+
+ioctl(fd, LED_ON);
+```
+
+Macro Expansion
+
+```c
+_IO('P',1)
+
+↓
+
+_IOC(_IOC_NONE,'P',1,0)
+```
+
+Packed Fields
+
+```text
+Direction = NONE
+
+Magic = 'P'
+
+Number = 1
+
+Size = 0
+```
+
+↓
+
+Linux creates
+
+```text
+One Unique 32-bit Integer
+```
+
+↓
+
+Driver receives
+
+```c
+unsigned int cmd
+```
+
+---
+
+## 12. Driver Comparison
+
+Driver:
+
+```c
+switch(cmd)
+{
+    case LED_ON:
+
+        pr_info("LED ON");
+
+        break;
+
+    case LED_OFF:
+
+        pr_info("LED OFF");
+
+        break;
+}
+```
+
+Both `cmd` and `LED_ON` contain the same encoded value, so the comparison succeeds.
+
+---
+
+## 13. Complete Flow
+
+```text
+Application
+
+        │
+
+        ▼
+
+_IO('P',1)
+
+        │
+
+        ▼
+
+_IOC(_IOC_NONE,'P',1,0)
+
+        │
+
+        ▼
+
+Shift Direction
+
+        │
+
+Shift Magic
+
+        │
+
+Shift Number
+
+        │
+
+Shift Size
+
+        │
+
+Bitwise OR
+
+        │
+
+One Encoded 32-bit Command
+
+        │
+
+Kernel
+
+        │
+
+pcd_ioctl()
+
+        │
+
+switch(cmd)
+
+        │
+
+case LED_ON
+```
+
+---
+
+## 14. Why Doesn't the Driver Decode cmd?
+
+Normally, the driver never manually extracts:
+
+- Direction
+- Type
+- Number
+- Size
+
+Instead, it simply compares:
+
+```c
+case LED_ON:
+
+case LED_OFF:
+
+case GET_STATUS:
+```
+
+because the macros generate identical encoded values during compilation.
+
+---
+
+## Interview Questions
+
+### Q1. What is `_IOC()`?
+
+**Answer:**
+
+`_IOC()` is the internal Linux macro that combines direction, magic number, command number, and data size into a unique 32-bit ioctl command.
+
+---
+
+### Q2. Why does Linux use bit shifting?
+
+**Answer:**
+
+Bit shifting places each field in a different bit position, preventing collisions between ioctl commands.
+
+---
+
+### Q3. Why is bitwise OR (`|`) used?
+
+**Answer:**
+
+Bitwise OR combines the shifted fields into one 32-bit command without overlapping the fields.
+
+---
+
+### Q4. What are the four fields encoded by `_IOC()`?
+
+**Answer:**
+
+- Direction
+- Magic Number (Type)
+- Command Number
+- Data Size
+
+---
+
+## Key Points
+
+- `_IO()`, `_IOR()`, `_IOW()`, and `_IOWR()` all expand to `_IOC()`.
+- `_IOC()` creates a unique 32-bit ioctl command.
+- Bit shifting assigns each field its own position.
+- Bitwise OR combines all fields.
+- The driver receives the encoded value in the `cmd` parameter.
+- Drivers typically compare `cmd` using a `switch` statement rather than decoding it manually.
+--------------------------------------------------------------------------------

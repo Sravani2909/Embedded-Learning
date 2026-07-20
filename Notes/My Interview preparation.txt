@@ -1,0 +1,136 @@
+1.My interview preparation:
+
+Good morning. My name is Sravani, and I am from Andhra Pradesh.I have completed my M.Tech, and I have 4+ years of experience in Embedded Software Development.
+
+During my career, I have worked in Industrial Automation, Semiconductor, and Home Appliance domains.
+
+I have hands-on experience in Embedded C programming, firmware development, and communication protocols such as UART, SPI, and I²C.
+
+I have worked with STM32 microcontrollers and ARM Cortex-M4-based systems, where I was involved in software-hardware interfacing, debugging, and firmware development.
+
+Recently, I have also been strengthening my knowledge in Linux Kernel concepts and Linux Character Device Drivers, and I have good exposure to Python.
+
+I enjoy learning new technologies, solving technical problems, and continuously improving my skills. Outside of work, 
+I enjoy teaching yoga, reading books, and writing a journal.
+
+I am currently looking for an opportunity where I can contribute my Embedded C and Linux skills while continuing to grow as an
+ Embedded Software Engineer.
+
+
+2.My project explanation:
+
+
+My recent project is the **HHT CD-SEM High Voltage Controller** project. CD-SEM (Critical Dimension Scanning Electron Microscope) is used in 
+the semiconductor industry to inspect and measure particles and patterns on semiconductor wafers.
+
+The purpose of the High Voltage Controller is to generate and control a high voltage in the range of **10 kV to 45 kV**. This high voltage is supplied
+ to the Spellman High Voltage Unit, which generates an electron beam. The electron beam is then used by the CD-SEM system to scan the semiconductor
+ wafer and detect microscopic particles and defects.
+
+The system architecture consists of a **Host PC**, an **STM32-based High Voltage Controller**, and the **Spellman High Voltage Unit**. The Host
+ communicates with the High Voltage Controller using **TCP/IP**, and the High Voltage Controller communicates with the Spellman unit by sending 
+ control commands and monitoring its responses.
+
+My role in this project was as an Embedded Software Developer. I worked on firmware development for the STM32 microcontroller.
+ My responsibilities included implementing communication between the Host and the High Voltage Controller, validating the communication
+ with the Spellman unit, and handling error conditions. If any communication failure or hardware fault occurred, the controller received the error 
+ information from the Spellman unit and reported the corresponding error code to the Host, where it was displayed in the Error Monitor window.
+
+I also developed two firmware features related to communication and error handling. During development, I performed debugging and validation to ensure reliable communication and proper fault reporting. This helped improve the stability and reliability of the High Voltage Controller.
+
+====>What challenges did you face?"
+
+You can answer:
+
+"One of the main challenges in the project was ensuring reliable communication between the Host, the STM32 High Voltage Controller, 
+and the Spellman High Voltage Unit. Since the system used TCP/IP on one side and RS-232 on the other, we had to ensure that commands were
+ transmitted correctly and responses were received within the expected time. We implemented timeout handling, validated communication packets
+, added firmware debug logs for troubleshooting,and reported communication failures through the Error Monitor window. 
+This helped us quickly identify and resolve communication issues."
+====>What exactly did you develop?"
+
+Don't answer:
+
+❌ "I worked on communication."
+
+Instead, answer specifically:
+
+Feature 1: Implemented Host-to-HV Controller communication handling.
+Feature 2: Implemented RS-232 communication with the Spellman unit.
+Feature 3: Implemented error detection, timeout handling, and error reporting to the Host.
+Feature 4: Performed debugging and validation to ensure reliable communication.
+====>How did you debug communication issues in your project?"
+
+You can answer:
+
+"Whenever a communication issue occurred, I first identified at which stage the communication was failing. 
+I checked whether the Host command reached the HV Controller. Then I used firmware debug logs to verify command parsing and UART transmission.
+ I used the STM32CubeIDE debugger with breakpoints and variable inspection to trace the firmware execution. 
+ For RS-232 communication, I verified the UART configuration, TX/RX connections, and communication parameters.
+ If required, I analyzed TCP/IP traffic using Wireshark and verified that communication errors were correctly reported in the Host Error Monitor. 
+This systematic approach helped isolate whether the issue was in the network, firmware, or hardware."
+
+====>Explain how communication happens from the Host to the STM32 using TCP/IP."
+
+You can answer:
+
+"The Host application first generates the required command, such as setting the output voltage. 
+This command is passed to the TCP protocol, which establishes a reliable connection, adds sequence numbers, acknowledgements, and error checking.
+ Next, the IP layer adds the source and destination IP addresses, and the Ethernet layer adds the MAC addresses before transmitting the frame over the Ethernet cable. The STM32 Ethernet controller receives the frame, verifies it, and passes it to the TCP/IP stack. The stack removes the protocol headers and delivers the application data to the firmware. The firmware validates the command and forwards it to the Spellman High Voltage Unit through RS-232. 
+After execution, the Spellman unit sends a response back to the STM32, which then forwards the status to the Host over TCP/IP."
+====>Explain the RS-232 communication between the STM32 controller and the Spellman unit."
+
+You can answer:
+
+"After the STM32 firmware receives and validates the command from the Host, it prepares the command according to the Spellman communication protocol.
+ The firmware transmits the command using the UART peripheral. The UART hardware converts the parallel data into serial data by adding the start and stop bits. Since the STM32 uses TTL voltage levels, the signal passes through a MAX232 level converter, which converts it to RS-232 voltage levels. The command is then transmitted through the RS-232 cable to the Spellman High Voltage Unit. The Spellman unit validates the command, executes it, and sends a response back through the same RS-232 interface. The STM32 receives the response through its UART, validates it, 
+processes any status or error information, and forwards the result to the Host over TCP/IP."
+===>What exactly does MAX232 do?"
+
+Give this concise answer:
+
+"MAX232 is an RS-232 transceiver. It converts the STM32's TTL UART voltage levels to RS-232 voltage levels and also converts incoming RS-232 signals back to TTL. Internally,
+ it uses a charge pump circuit to generate the required positive and negative voltages and performs the necessary logic inversion."
+ 
+ ===>Process	Thread
+Program in execution	Smallest execution unit
+Own address space	Shares process address space
+Own heap and data	Shares heap and data
+Own stack	Own stack
+Heavyweight	Lightweight
+Higher context-switch overhead	Lower context-switch overhead
+///////////////
+====>Explain ARM Cortex-M4 architecture.
+
+You can answer:
+
+"ARM Cortex-M4 is a 32-bit RISC processor designed for embedded real-time systems. It uses the Thumb-2 instruction set for compact and
+ efficient code execution. The core contains sixteen registers (R0–R15), including the Stack Pointer, Link Register, and Program Counter. 
+ It includes an NVIC for interrupt management, a Vector Table that stores interrupt handler addresses, a SysTick timer for periodic interrupts,
+ and supports two stack pointers: MSP for reset and interrupt handling, and PSP for application or RTOS tasks. Its memory map includes Flash, 
+SRAM, peripheral registers, and system control space, making it well suited for STM32-based embedded applications."
+
+===>"The firmware development life cycle begins with requirement analysis, where we understand the customer requirements and hardware specifications. Based on those requirements, we prepare the design document and define the software architecture.
+
+Next, we implement the firmware in Embedded C and perform code reviews to ensure coding standards and quality. After building the project, we flash the firmware onto the target hardware using tools like ST-Link.
+
+We then debug the firmware, perform unit testing to verify individual modules, and carry out integration testing to ensure all modules work together correctly. Once the firmware passes validation and system testing, it is released to the customer.
+ After release, we continue with maintenance by fixing bugs, improving performance, or adding new features when required."
+ 
+ ===>How an Experienced Engineer Answers(Git flow)
+
+Suppose your team assigns you a UART Feature.
+
+Your answer should be:
+
+"First, I clone the latest repository using git clone. Before starting my work, I execute git pull to make sure my local repository is up to date.
+
+Then I create a new feature branch using git checkout -b uart_feature.
+
+After implementing and testing the UART feature, I check the modified files using git status.
+
+Then I stage the changes using git add and commit them using git commit with a meaningful commit message.
+
+After committing, I push the feature branch to the remote repository using git push origin uart_feature.
+
+Finally, I create a merge request (or pull request), my teammates review the code, and after approval, the branch is merged into the main branch."
